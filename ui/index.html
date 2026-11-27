@@ -1,0 +1,982 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Antigravity File Hub</title>
+<style>
+  :root {
+    --bg: #0c0f16;
+    --panel: #131823;
+    --panel-2: #192131;
+    --hover: #1f293d;
+    --active: rgba(99, 102, 241, 0.18);
+    --border: rgba(148, 163, 184, 0.16);
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #6366f1;
+    --accent-2: #22d3ee;
+    --danger: #f43f5e;
+    --success: #10b981;
+    --warn: #f59e0b;
+    --code-bg: #0a0d13;
+    --radius: 10px;
+    --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+    --mono: "Cascadia Code", "Fira Code", Consolas, monospace;
+  }
+  body.light {
+    --bg: #f8fafc;
+    --panel: #ffffff;
+    --panel-2: #f1f5f9;
+    --hover: #e2e8f0;
+    --active: rgba(79, 70, 229, 0.12);
+    --border: rgba(15, 23, 42, 0.12);
+    --text: #0f172a;
+    --muted: #64748b;
+    --accent: #4f46e5;
+    --accent-2: #0891b2;
+    --code-bg: #f8fafc;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font-family: var(--font); font-size: 13px; overflow: hidden; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  .app { display: flex; flex-direction: column; height: 100vh; }
+
+  /* Header */
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 10px 14px; background: var(--panel); border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .brand-badge {
+    width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    display: grid; place-items: center; font-weight: 700; color: #fff; font-size: 13px;
+  }
+  .brand-title { font-weight: 700; font-size: 14px; white-space: nowrap; }
+  .root-pill {
+    font-family: var(--mono); font-size: 11px; color: var(--muted);
+    background: var(--panel-2); border: 1px solid var(--border);
+    padding: 2px 8px; border-radius: 999px; max-width: 240px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;
+  }
+  .actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 5px 10px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--panel-2); cursor: pointer; font-size: 12px; white-space: nowrap;
+    transition: background .15s, border-color .15s;
+  }
+  .btn:hover { background: var(--hover); border-color: rgba(99,102,241,.45); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.danger { color: var(--danger); }
+  .btn.danger:hover { background: rgba(244,63,94,.12); border-color: rgba(244,63,94,.45); }
+  .btn.sm { padding: 3px 7px; font-size: 11px; border-radius: 6px; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+
+  /* Categories */
+  .cat-bar {
+    display: flex; align-items: center; gap: 6px; padding: 8px 14px;
+    background: var(--panel); border-bottom: 1px solid var(--border);
+    overflow-x: auto; flex-shrink: 0;
+  }
+  .cat-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 5px 11px; border-radius: 999px; border: 1px solid var(--border);
+    background: transparent; cursor: pointer; font-size: 12px; color: var(--muted); white-space: nowrap;
+  }
+  .cat-tab:hover { background: var(--panel-2); color: var(--text); }
+  .cat-tab.active { background: var(--active); border-color: var(--accent); color: var(--text); font-weight: 600; }
+  .count { font-size: 11px; opacity: .75; background: var(--panel-2); padding: 0 6px; border-radius: 999px; }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex; align-items: center; gap: 8px; padding: 8px 14px;
+    background: var(--bg); border-bottom: 1px solid var(--border); flex-wrap: wrap;
+  }
+  .search-box {
+    flex: 1; min-width: 170px; display: flex; align-items: center; gap: 6px;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 4px 9px;
+  }
+  .search-box input { border: 0; outline: 0; background: transparent; width: 100%; font-size: 12px; }
+  .chip-group { display: flex; gap: 4px; flex-wrap: wrap; }
+  .chip {
+    padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--panel); color: var(--muted); cursor: pointer; font-size: 11px;
+  }
+  .chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  select.ctrl {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 8px;
+    padding: 4px 8px; font-size: 12px; outline: none; cursor: pointer;
+  }
+
+  /* Breadcrumb */
+  .crumb-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 6px 14px; background: var(--panel); border-bottom: 1px solid var(--border);
+    font-size: 12px; min-height: 32px;
+  }
+  .crumbs { display: flex; align-items: center; gap: 4px; overflow-x: auto; white-space: nowrap; }
+  .crumb { cursor: pointer; color: var(--accent-2); padding: 1px 4px; border-radius: 4px; }
+  .crumb:hover { background: var(--hover); }
+  .crumb-sep { color: var(--muted); }
+
+  /* Main Split */
+  .main { display: grid; grid-template-columns: minmax(280px, 44%) 1fr; flex: 1; min-height: 0; }
+  @media (max-width: 780px) {
+    .main { grid-template-columns: 1fr; grid-template-rows: 46% 54%; }
+  }
+  .list-pane { border-right: 1px solid var(--border); overflow-y: auto; background: var(--bg); }
+  .detail-pane { display: flex; flex-direction: column; min-height: 0; background: var(--panel); }
+
+  /* File Rows */
+  .row {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    padding: 8px 12px; border-bottom: 1px solid var(--border); cursor: pointer;
+    transition: background .12s;
+  }
+  .row:hover { background: var(--hover); }
+  .row.selected { background: var(--active); border-left: 3px solid var(--accent); padding-left: 9px; }
+  .row-main { display: flex; align-items: flex-start; gap: 9px; min-width: 0; flex: 1; }
+  .icon { font-size: 16px; line-height: 1.2; flex-shrink: 0; margin-top: 1px; }
+  .row-info { min-width: 0; flex: 1; }
+  .row-name { font-weight: 600; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row-sub {
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+    font-size: 11px; color: var(--muted); margin-top: 2px;
+  }
+  .tag {
+    display: inline-block; padding: 1px 6px; border-radius: 999px; font-size: 10px;
+    background: rgba(99,102,241,.16); color: #a5b4fc; border: 1px solid rgba(99,102,241,.28);
+  }
+  body.light .tag { color: #4338ca; }
+  .tag.session { background: rgba(34,211,238,.14); color: #67e8f9; border-color: rgba(34,211,238,.28); }
+  body.light .tag.session { color: #0e7490; }
+  .row-ops { display: flex; gap: 4px; opacity: .75; flex-shrink: 0; }
+  .row:hover .row-ops { opacity: 1; }
+
+  /* Detail / Preview / Editor */
+  .detail-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap;
+    padding: 9px 14px; border-bottom: 1px solid var(--border); background: var(--panel-2);
+  }
+  .detail-title { font-weight: 700; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 340px; }
+  .tab-bar { display: flex; gap: 4px; padding: 6px 14px; border-bottom: 1px solid var(--border); background: var(--panel); }
+  .dtab {
+    padding: 4px 10px; border-radius: 6px; border: 1px solid transparent;
+    background: transparent; cursor: pointer; font-size: 12px; color: var(--muted);
+  }
+  .dtab.active { background: var(--active); border-color: var(--accent); color: var(--text); font-weight: 600; }
+  .detail-body { flex: 1; min-height: 0; overflow: auto; padding: 14px; }
+  .empty { height: 100%; display: grid; place-items: center; color: var(--muted); text-align: center; padding: 24px; }
+
+  /* Preview styles */
+  .code-view {
+    margin: 0; padding: 12px; background: var(--code-bg); border: 1px solid var(--border);
+    border-radius: var(--radius); font-family: var(--mono); font-size: 12px; line-height: 1.55;
+    overflow: auto; white-space: pre; tab-size: 2;
+  }
+  .md-view { line-height: 1.65; font-size: 13px; }
+  .md-view h1, .md-view h2, .md-view h3 { margin: 14px 0 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+  .md-view pre { background: var(--code-bg); padding: 10px 12px; border-radius: 8px; overflow: auto; border: 1px solid var(--border); font-family: var(--mono); font-size: 12px; }
+  .md-view code { background: var(--panel-2); padding: 1px 5px; border-radius: 4px; font-family: var(--mono); font-size: 12px; }
+  .md-view pre code { background: none; padding: 0; }
+  .md-view table { border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 12px; }
+  .md-view th, .md-view td { border: 1px solid var(--border); padding: 6px 8px; text-align: left; }
+  .md-view th { background: var(--panel-2); }
+  .md-view blockquote { margin: 8px 0; padding: 4px 12px; border-left: 3px solid var(--accent); color: var(--muted); }
+  .img-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .img-wrap img { max-width: 100%; max-height: 62vh; border-radius: 8px; border: 1px solid var(--border); background: repeating-conic-gradient(#1e293b 0% 25%, #0f172a 0% 50%) 50% / 16px 16px; }
+
+  /* Editor */
+  .editor-wrap { display: flex; flex-direction: column; height: 100%; gap: 8px; }
+  .editor-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .editor-area {
+    flex: 1; width: 100%; resize: none; padding: 12px;
+    background: var(--code-bg); color: var(--text); border: 1px solid var(--border);
+    border-radius: var(--radius); font-family: var(--mono); font-size: 12.5px; line-height: 1.55;
+    outline: none; tab-size: 2;
+  }
+  .editor-area:focus { border-color: var(--accent); }
+  .dirty { color: var(--warn); font-size: 12px; font-weight: 600; }
+
+  /* Metadata table */
+  .meta-grid { display: grid; grid-template-columns: 110px 1fr; gap: 8px 12px; font-size: 12px; margin-bottom: 16px; }
+  .meta-k { color: var(--muted); }
+  .meta-v { word-break: break-all; font-family: var(--mono); font-size: 11.5px; }
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 7px 10px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--code-bg); outline: none;
+  }
+
+  /* Modal & Toast */
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,.55); display: none;
+    place-items: center; z-index: 50; padding: 16px;
+  }
+  .modal-backdrop.open { display: grid; }
+  .modal {
+    width: 100%; max-width: 440px; background: var(--panel); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px; box-shadow: 0 20px 50px rgba(0,0,0,.45);
+  }
+  .modal h3 { margin: 0 0 12px; font-size: 15px; }
+  .modal-foot { display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; }
+  .toast {
+    position: fixed; right: 16px; bottom: 16px; padding: 8px 14px; border-radius: 8px;
+    background: #1e293b; color: #f8fafc; border: 1px solid var(--accent);
+    box-shadow: 0 8px 24px rgba(0,0,0,.35); opacity: 0; pointer-events: none;
+    transform: translateY(8px); transition: all .2s; z-index: 60; font-size: 12px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-badge">FH</div>
+      <div>
+        <div class="brand-title">Antigravity File Hub</div>
+      </div>
+      <span id="rootBadge" class="root-pill" title="点击在资源管理器中打开根目录">加载中...</span>
+    </div>
+    <div class="actions">
+      <button class="btn primary" id="btnNewSession">+ 新建会话夹</button>
+      <button class="btn" id="btnNewProject">+ 新建项目夹</button>
+      <button class="btn" id="btnNewFile">+ 新建文件</button>
+      <button class="btn" id="btnOpenCur" title="在资源管理器中打开当前目录">📂 打开目录</button>
+      <button class="btn" id="btnRefresh" title="刷新">↻</button>
+      <button class="btn" id="btnTheme" title="切换深浅主题">◐</button>
+      <button class="btn" id="btnSettings" title="设置根目录">⚙</button>
+    </div>
+  </header>
+
+  <nav class="cat-bar" id="catBar"></nav>
+
+  <section class="toolbar">
+    <div class="search-box">
+      <span>🔍</span>
+      <input id="searchInput" placeholder="搜索文件名、路径、会话主题或标签..." />
+    </div>
+    <div class="chip-group" id="typeChips">
+      <button class="chip active" data-type="all">全部</button>
+      <button class="chip" data-type="folder">文件夹</button>
+      <button class="chip" data-type="code">代码</button>
+      <button class="chip" data-type="doc">文档</button>
+      <button class="chip" data-type="image">图片</button>
+      <button class="chip" data-type="data">配置/数据</button>
+    </div>
+    <select id="sortSelect" class="ctrl" title="排序字段">
+      <option value="mtime">按修改时间</option>
+      <option value="name">按名称</option>
+      <option value="size">按大小</option>
+      <option value="type">按类型</option>
+    </select>
+    <button class="btn sm" id="btnOrder" title="切换升降序">↓ 降序</button>
+    <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--muted);cursor:pointer;">
+      <input type="checkbox" id="chkRecursive" /> 展开子目录
+    </label>
+  </section>
+
+  <div class="crumb-bar">
+    <div class="crumbs" id="breadcrumbs"></div>
+    <div style="font-size:11px;color:var(--muted)" id="summaryStat"></div>
+  </div>
+
+  <main class="main">
+    <section class="list-pane" id="listPane"></section>
+    <section class="detail-pane" id="detailPane">
+      <div class="empty">
+        <div>
+          <div style="font-size:28px;margin-bottom:8px;">🗂️</div>
+          <div style="font-weight:600;margin-bottom:4px;">选择左侧文件或文件夹</div>
+          <div style="font-size:12px;">支持 Markdown / 代码 / 图片预览、在线编辑保存、自定义分类标签与一键在资源管理器中定位</div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal-backdrop" id="modalBackdrop">
+  <div class="modal" id="modalBox"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+  const token = new URLSearchParams(location.search).get('token') || '';
+  const apiHeaders = (json = true) => {
+    const h = {};
+    if (json) h['Content-Type'] = 'application/json';
+    if (token) h['x-sidecar-token'] = token;
+    return h;
+  };
+  const withToken = (url) => token ? (url + (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(token)) : url;
+
+  const state = {
+    overview: null,
+    category: 'all',
+    currentPath: '',
+    fileType: 'all',
+    q: '',
+    sort: 'mtime',
+    order: 'desc',
+    recursive: false,
+    items: [],
+    selectedPath: '',
+    detail: null,
+    detailTab: 'preview', // preview | edit | info
+    editorDraft: '',
+    editorDirty: false,
+    mdRaw: false
+  };
+
+  const $ = (id) => document.getElementById(id);
+  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+
+  function toast(msg, isErr = false) {
+    const el = $('toast');
+    el.textContent = msg;
+    el.style.borderColor = isErr ? 'var(--danger)' : 'var(--accent)';
+    el.classList.add('show');
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => el.classList.remove('show'), 2600);
+  }
+
+  async function api(path, opts = {}) {
+    const res = await fetch(withToken(path), {
+      method: opts.method || 'GET',
+      headers: apiHeaders(Boolean(opts.body)),
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+    return data;
+  }
+
+  function fmtSize(bytes) {
+    if (!bytes) return '0 B';
+    const units = ['B', 'KB', 'MB', 'GB'];
+    let i = 0, v = bytes;
+    while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+    return (i === 0 ? v : v.toFixed(1)) + ' ' + units[i];
+  }
+
+  function fmtTime(ms) {
+    if (!ms) return '-';
+    const d = new Date(ms);
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+
+  function iconFor(it) {
+    if (it.isDir) {
+      if (it.category === 'sessions' && it.path.includes('/')) return '💬';
+      if (it.category === 'projects' && it.path.includes('/')) return '🚀';
+      return it.isLink ? '🔗' : '📁';
+    }
+    return { code: '📜', doc: '📝', image: '🖼️', data: '🧩', archive: '📦', binary: '📄' }[it.fileType] || '📄';
+  }
+
+  function renderMarkdown(md) {
+    let html = esc(md);
+    // Fenced code blocks
+    html = html.replace(/```([\w-]*)\n([\s\S]*?)```/g, (_, lang, code) => `<pre><code>${code}</code></pre>`);
+    // Tables (basic GFM)
+    html = html.replace(/(^\|.+\|\n\|[-:| ]+\|\n(?:\|.+\|\n?)*)/gm, (block) => {
+      const rows = block.trim().split('\n').filter(Boolean);
+      if (rows.length < 2) return block;
+      const parseRow = r => r.replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+      const th = parseRow(rows[0]).map(c => `<th>${c}</th>`).join('');
+      const tb = rows.slice(2).map(r => `<tr>${parseRow(r).map(c => `<td>${c}</td>`).join('')}</tr>`).join('');
+      return `<table><thead><tr>${th}</tr></thead><tbody>${tb}</tbody></table>`;
+    });
+    html = html
+      .replace(/^### (.*)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.*)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.*)$/gm, '<h1>$1</h1>')
+      .replace(/^&gt; (.*)$/gm, '<blockquote>$1</blockquote>')
+      .replace(/^\s*[-*] (.*)$/gm, '<li>$1</li>')
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+      .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" style="color:var(--accent-2)">$1</a>')
+      .replace(/\n\n+/g, '<br><br>');
+    return html;
+  }
+
+  async function loadOverview() {
+    state.overview = await api('/api/overview');
+    document.body.classList.toggle('light', state.overview.theme === 'light');
+    $('rootBadge').textContent = state.overview.rootDir;
+    renderCatBar();
+  }
+
+  function renderCatBar() {
+    const ov = state.overview;
+    if (!ov) return;
+    const tabs = [
+      { id: 'all', label: '全部', count: ov.totals.files + ov.totals.dirs },
+      { id: 'projects', label: '🚀 项目', count: ov.stats.projects?.topItems ?? 0 },
+      { id: 'sessions', label: '💬 会话产出', count: ov.stats.sessions?.topItems ?? 0 },
+      { id: 'scratch', label: '🧪 临时区', count: ov.stats.scratch?.topItems ?? 0 },
+      { id: '_Storage', label: '💾 系统存储', count: ov.stats._Storage?.topItems ?? 0 }
+    ];
+    $('catBar').innerHTML = tabs.map(t =>
+      `<button class="cat-tab ${state.category === t.id ? 'active' : ''}" data-cat="${esc(t.id)}">${t.label} <span class="count">${t.count}</span></button>`
+    ).join('');
+    for (const btn of $('catBar').querySelectorAll('.cat-tab')) {
+      btn.onclick = () => {
+        state.category = btn.dataset.cat;
+        state.currentPath = '';
+        renderCatBar();
+        loadList();
+      };
+    }
+  }
+
+  async function loadList() {
+    const qs = new URLSearchParams({
+      path: state.currentPath,
+      category: state.category,
+      fileType: state.fileType,
+      q: state.q,
+      sort: state.sort,
+      order: state.order,
+      recursive: state.recursive ? '1' : '0'
+    });
+    const data = await api('/api/list?' + qs.toString());
+    state.items = data.items || [];
+    renderBreadcrumbs(data.breadcrumbs || []);
+    $('summaryStat').textContent = `共 ${data.total} 项` + (data.recursive ? ' (含子目录)' : '');
+    renderList();
+  }
+
+  function renderBreadcrumbs(crumbs) {
+    let html = `<span class="crumb" data-p="">根目录</span>`;
+    for (const c of crumbs) {
+      html += `<span class="crumb-sep">/</span><span class="crumb" data-p="${esc(c.path)}">${esc(c.name)}</span>`;
+    }
+    $('breadcrumbs').innerHTML = html;
+    for (const el of $('breadcrumbs').querySelectorAll('.crumb')) {
+      el.onclick = () => {
+        state.currentPath = el.dataset.p;
+        if (!state.currentPath) state.category = 'all';
+        renderCatBar();
+        loadList();
+      };
+    }
+  }
+
+  function renderList() {
+    const pane = $('listPane');
+    if (!state.items.length) {
+      pane.innerHTML = `<div class="empty"><div>当前分类/搜索条件下暂无文件</div></div>`;
+      return;
+    }
+    pane.innerHTML = state.items.map(it => {
+      const sel = it.path === state.selectedPath ? 'selected' : '';
+      const titleBadge = it.sessionMeta?.title ? `<span class="tag session">${esc(it.sessionMeta.title)}</span>` : '';
+      const tagHtml = (it.tags || []).slice(0, 3).map(t => `<span class="tag">#${esc(t)}</span>`).join('');
+      const metaRight = it.isDir
+        ? `${it.childCount ?? 0} 项`
+        : `${fmtSize(it.size)}`;
+      return `
+        <div class="row ${sel}" data-path="${esc(it.path)}" data-dir="${it.isDir ? '1' : '0'}">
+          <div class="row-main">
+            <span class="icon">${iconFor(it)}</span>
+            <div class="row-info">
+              <div class="row-name" title="${esc(it.path)}">${esc(it.name)}</div>
+              <div class="row-sub">
+                <span>${metaRight}</span>
+                <span>· ${fmtTime(it.mtimeMs)}</span>
+                ${state.recursive || state.q ? `<span style="opacity:.7">· ${esc(it.path)}</span>` : ''}
+                ${titleBadge}${tagHtml}
+              </div>
+            </div>
+          </div>
+          <div class="row-ops">
+            ${it.isDir ? `<button class="btn sm" data-act="enter" title="进入文件夹">进入</button>` : ''}
+            <button class="btn sm" data-act="reveal" title="在资源管理器中定位/打开">📂</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    for (const row of pane.querySelectorAll('.row')) {
+      const rel = row.dataset.path;
+      const isDir = row.dataset.dir === '1';
+      row.onclick = (e) => {
+        const actBtn = e.target.closest('button[data-act]');
+        if (actBtn) {
+          e.stopPropagation();
+          if (actBtn.dataset.act === 'enter') {
+            state.currentPath = rel;
+            loadList();
+          } else if (actBtn.dataset.act === 'reveal') {
+            revealPath(rel, false);
+          }
+          return;
+        }
+        selectItem(rel);
+      };
+      row.ondblclick = () => {
+        if (isDir) {
+          state.currentPath = rel;
+          loadList();
+        } else {
+          selectItem(rel, 'edit');
+        }
+      };
+    }
+  }
+
+  async function selectItem(relPath, preferredTab = null) {
+    if (state.editorDirty && !confirm('当前文件有未保存的修改，确定放弃并切换吗？')) return;
+    state.selectedPath = relPath;
+    state.editorDirty = false;
+    renderList();
+    try {
+      state.detail = await api('/api/file?path=' + encodeURIComponent(relPath));
+      state.editorDraft = state.detail.content ?? '';
+      state.detailTab = preferredTab && state.detail.editable ? preferredTab : 'preview';
+      renderDetail();
+    } catch (err) {
+      toast('读取失败: ' + err.message, true);
+    }
+  }
+
+  function renderDetail() {
+    const pane = $('detailPane');
+    const d = state.detail;
+    if (!d) return;
+
+    const head = `
+      <div class="detail-head">
+        <div style="min-width:0;">
+          <div class="detail-title" title="${esc(d.fullPath)}">${iconFor(d)} ${esc(d.name)}</div>
+          <div style="font-size:11px;color:var(--muted);font-family:var(--mono);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:360px;">${esc(d.fullPath)}</div>
+        </div>
+        <div class="actions">
+          ${d.isDir ? `<button class="btn sm primary" id="dBtnEnter">进入目录</button>` : ''}
+          <button class="btn sm" id="dBtnReveal">📂 在资源管理器中打开</button>
+          <button class="btn sm" id="dBtnCopy">📋 复制路径</button>
+          <button class="btn sm" id="dBtnRename">重命名</button>
+          <button class="btn sm" id="dBtnMove">移动分类</button>
+          <button class="btn sm danger" id="dBtnDelete">删除</button>
+        </div>
+      </div>
+      <div class="tab-bar">
+        <button class="dtab ${state.detailTab==='preview'?'active':''}" data-tab="preview">👁 预览 / 查看</button>
+        ${d.editable ? `<button class="dtab ${state.detailTab==='edit'?'active':''}" data-tab="edit">✏️ 编辑${state.editorDirty?' ●':''}</button>` : ''}
+        <button class="dtab ${state.detailTab==='info'?'active':''}" data-tab="info">🏷️ 属性与分类</button>
+      </div>
+    `;
+
+    let body = '';
+    if (state.detailTab === 'preview') {
+      if (d.previewKind === 'folder') {
+        const sm = d.sessionMeta;
+        body = `
+          <div class="meta-grid">
+            <div class="meta-k">目录路径</div><div class="meta-v">${esc(d.fullPath)}</div>
+            <div class="meta-k">所属分类</div><div class="meta-v">${esc(d.category)}</div>
+            <div class="meta-k">包含文件</div><div class="meta-v">${d.dirStats?.files ?? 0} 个文件 / ${d.dirStats?.dirs ?? 0} 个子目录</div>
+            <div class="meta-k">占用体积</div><div class="meta-v">${fmtSize(d.dirStats?.bytes || 0)}${d.dirStats?.truncated ? ' (采样估算)' : ''}</div>
+            <div class="meta-k">修改时间</div><div class="meta-v">${fmtTime(d.mtimeMs)}</div>
+          </div>
+          ${sm ? `
+            <div style="padding:12px;border-radius:10px;background:var(--panel-2);border:1px solid var(--border);margin-bottom:12px;">
+              <div style="font-weight:700;margin-bottom:6px;">💬 会话元数据 (.agy-session.json)</div>
+              <div class="meta-grid" style="margin:0;">
+                <div class="meta-k">会话标题</div><div class="meta-v">${esc(sm.title || '-')}</div>
+                <div class="meta-k">主题标识</div><div class="meta-v">${esc(sm.topic || '-')}</div>
+                <div class="meta-k">会话 ID</div><div class="meta-v">${esc(sm.conversationId || '-')}</div>
+                <div class="meta-k">创建时间</div><div class="meta-v">${esc(sm.createdAt || '-')}</div>
+              </div>
+            </div>
+          ` : ''}
+          <button class="btn primary" id="dBtnEnterBig">进入该文件夹浏览内容 →</button>
+        `;
+      } else if (d.previewKind === 'image') {
+        const imgUrl = withToken('/api/raw?path=' + encodeURIComponent(d.path) + '&t=' + d.mtimeMs);
+        body = `
+          <div class="img-wrap">
+            <img src="${imgUrl}" alt="${esc(d.name)}" />
+            <div style="font-size:12px;color:var(--muted)">${esc(d.mimeType)} · ${fmtSize(d.size)} · 修改于 ${fmtTime(d.mtimeMs)}</div>
+          </div>
+        `;
+      } else if (d.previewKind === 'markdown') {
+        body = `
+          <div style="display:flex;justify-content:flex-end;margin-bottom:8px;">
+            <button class="btn sm" id="btnToggleMd">${state.mdRaw ? '切换渲染预览' : '查看 Markdown 源码'}</button>
+          </div>
+          ${state.mdRaw
+            ? `<pre class="code-view">${esc(d.content)}</pre>`
+            : `<div class="md-view">${renderMarkdown(d.content || '')}</div>`}
+        `;
+      } else if (d.previewKind === 'text') {
+        const numbered = (d.content || '').split(/\r?\n/).map((line, i) =>
+          `${String(i + 1).padStart(4, ' ')} │ ${line}`
+        ).join('\n');
+        body = `
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-size:11px;color:var(--muted);">
+            <span>${d.lines} 行 · ${d.chars} 字符 · ${fmtSize(d.size)}</span>
+            <button class="btn sm" id="btnCopyCode">复制内容</button>
+          </div>
+          <pre class="code-view">${esc(numbered)}</pre>
+        `;
+      } else {
+        body = `<div class="empty"><div><div style="font-size:26px;margin-bottom:8px;">📄</div><div>${esc(d.reason || '无法直接预览该文件')}</div></div></div>`;
+      }
+    } else if (state.detailTab === 'edit') {
+      body = `
+        <div class="editor-wrap">
+          <div class="editor-bar">
+            <span class="${state.editorDirty ? 'dirty' : ''}" id="dirtyFlag">${state.editorDirty ? '● 未保存更改 (Ctrl+S 保存)' : '已同步磁盘'}</span>
+            <div class="actions">
+              <button class="btn sm" id="btnDiscard" ${state.editorDirty ? '' : 'disabled'}>还原</button>
+              <button class="btn sm primary" id="btnSaveFile">💾 保存 (Ctrl+S)</button>
+            </div>
+          </div>
+          <textarea class="editor-area" id="editorArea" spellcheck="false">${esc(state.editorDraft)}</textarea>
+        </div>
+      `;
+    } else {
+      body = `
+        <div class="meta-grid">
+          <div class="meta-k">完整路径</div><div class="meta-v">${esc(d.fullPath)}</div>
+          <div class="meta-k">相对路径</div><div class="meta-v">${esc(d.path)}</div>
+          <div class="meta-k">文件类型</div><div class="meta-v">${esc(d.fileType)} (${esc(d.ext || '目录')})</div>
+          <div class="meta-k">大小</div><div class="meta-v">${d.isDir ? '-' : fmtSize(d.size)}</div>
+          <div class="meta-k">修改时间</div><div class="meta-v">${fmtTime(d.mtimeMs)}</div>
+        </div>
+        <div class="form-group">
+          <label>自定义归属分类（留空则按目录自动识别）</label>
+          <select id="metaCat">
+            <option value="">自动识别 (${esc(d.category)})</option>
+            <option value="projects" ${d.customCategory==='projects'?'selected':''}>项目 (projects)</option>
+            <option value="sessions" ${d.customCategory==='sessions'?'selected':''}>会话产出 (sessions)</option>
+            <option value="scratch" ${d.customCategory==='scratch'?'selected':''}>临时区 (scratch)</option>
+            <option value="_Storage" ${d.customCategory==='_Storage'?'selected':''}>系统存储 (_Storage)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>自定义标签（逗号分隔，例如：脚本, 报告, 重要）</label>
+          <input id="metaTags" value="${esc((d.tags || []).join(', '))}" />
+        </div>
+        <div class="form-group">
+          <label>备注说明</label>
+          <textarea id="metaNote" rows="3">${esc(d.note || '')}</textarea>
+        </div>
+        <button class="btn primary" id="btnSaveMeta">保存分类与标签</button>
+      `;
+    }
+
+    pane.innerHTML = `${head}<div class="detail-body">${body}</div>`;
+
+    for (const tb of pane.querySelectorAll('.dtab')) {
+      tb.onclick = () => { state.detailTab = tb.dataset.tab; renderDetail(); };
+    }
+    if ($('dBtnEnter')) $('dBtnEnter').onclick = () => { state.currentPath = d.path; loadList(); };
+    if ($('dBtnEnterBig')) $('dBtnEnterBig').onclick = () => { state.currentPath = d.path; loadList(); };
+    $('dBtnReveal').onclick = () => revealPath(d.path, d.isDir);
+    $('dBtnCopy').onclick = async () => {
+      try { await navigator.clipboard.writeText(d.fullPath); toast('已复制完整路径'); }
+      catch { prompt('请复制路径：', d.fullPath); }
+    };
+    $('dBtnRename').onclick = () => openRenameModal(d);
+    $('dBtnMove').onclick = () => openMoveModal(d);
+    $('dBtnDelete').onclick = async () => {
+      if (!confirm(`确定永久删除「${d.name}」吗？此操作不可撤销。`)) return;
+      try {
+        await api('/api/delete', { method: 'POST', body: { path: d.path } });
+        toast('已删除 ' + d.name);
+        state.selectedPath = '';
+        state.detail = null;
+        $('detailPane').innerHTML = '<div class="empty"><div>已删除，请选择其他文件</div></div>';
+        await refreshAll();
+      } catch (err) { toast(err.message, true); }
+    };
+    if ($('btnToggleMd')) $('btnToggleMd').onclick = () => { state.mdRaw = !state.mdRaw; renderDetail(); };
+    if ($('btnCopyCode')) $('btnCopyCode').onclick = async () => {
+      try { await navigator.clipboard.writeText(d.content || ''); toast('已复制文件内容'); } catch {}
+    };
+    if ($('editorArea')) {
+      const area = $('editorArea');
+      area.oninput = () => {
+        state.editorDraft = area.value;
+        state.editorDirty = area.value !== (d.content ?? '');
+        $('dirtyFlag').textContent = state.editorDirty ? '● 未保存更改 (Ctrl+S 保存)' : '已同步磁盘';
+        $('dirtyFlag').className = state.editorDirty ? 'dirty' : '';
+        $('btnDiscard').disabled = !state.editorDirty;
+      };
+      area.onkeydown = (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+          e.preventDefault();
+          saveCurrentEdit();
+        }
+      };
+      $('btnDiscard').onclick = () => { state.editorDraft = d.content ?? ''; state.editorDirty = false; renderDetail(); };
+      $('btnSaveFile').onclick = () => saveCurrentEdit();
+    }
+    if ($('btnSaveMeta')) {
+      $('btnSaveMeta').onclick = async () => {
+        try {
+          const tags = $('metaTags').value.split(/[,，]/).map(s => s.trim()).filter(Boolean);
+          await api('/api/meta', {
+            method: 'POST',
+            body: { path: d.path, customCategory: $('metaCat').value, tags, note: $('metaNote').value }
+          });
+          toast('分类与标签已保存');
+          await loadList();
+          await selectItem(d.path, 'info');
+        } catch (err) { toast(err.message, true); }
+      };
+    }
+  }
+
+  async function saveCurrentEdit() {
+    if (!state.detail) return;
+    try {
+      await api('/api/file', { method: 'POST', body: { path: state.detail.path, content: state.editorDraft } });
+      state.detail.content = state.editorDraft;
+      state.editorDirty = false;
+      toast('已保存：' + state.detail.name);
+      await loadList();
+      renderDetail();
+    } catch (err) { toast('保存失败: ' + err.message, true); }
+  }
+
+  async function revealPath(relPath, openFolder = false) {
+    try {
+      await api('/api/reveal', { method: 'POST', body: { path: relPath, openFolder } });
+      toast('已在资源管理器中打开');
+    } catch (err) { toast('打开失败: ' + err.message, true); }
+  }
+
+  function openModal(html) {
+    $('modalBox').innerHTML = html;
+    $('modalBackdrop').classList.add('open');
+  }
+  function closeModal() { $('modalBackdrop').classList.remove('open'); }
+  $('modalBackdrop').onclick = (e) => { if (e.target === $('modalBackdrop')) closeModal(); };
+
+  function openNewSessionModal() {
+    const today = new Date().toISOString().slice(0, 10);
+    openModal(`
+      <h3>💬 新建会话文件夹</h3>
+      <div class="form-group">
+        <label>会话主题标识（英文/拼音短名，将生成 sessions/${today}_&lt;topic&gt;）</label>
+        <input id="mTopic" placeholder="例如：data-analysis 或 pdf-summary" />
+      </div>
+      <div class="form-group">
+        <label>中文标题（显示在 File Hub 卡片上）</label>
+        <input id="mTitle" placeholder="例如：季度销售数据分析" />
+      </div>
+      <div class="form-group">
+        <label>标签（逗号分隔，可选）</label>
+        <input id="mTags" placeholder="分析, 报告" />
+      </div>
+      <div class="modal-foot">
+        <button class="btn" id="mCancel">取消</button>
+        <button class="btn primary" id="mOk">创建</button>
+      </div>
+    `);
+    $('mCancel').onclick = closeModal;
+    $('mOk').onclick = async () => {
+      const topic = ($('mTopic').value || '').trim().replace(/\s+/g, '-');
+      if (!topic) return toast('请填写主题标识', true);
+      const title = ($('mTitle').value || topic).trim();
+      const tags = $('mTags').value.split(/[,，]/).map(s => s.trim()).filter(Boolean);
+      const rel = `sessions/${today}_${topic}`;
+      try {
+        await api('/api/mkdir', { method: 'POST', body: { path: rel, sessionMeta: { title, topic, tags, category: 'session' } } });
+        closeModal();
+        toast('已创建会话目录：' + rel);
+        state.category = 'sessions';
+        state.currentPath = rel;
+        await refreshAll();
+      } catch (err) { toast(err.message, true); }
+    };
+  }
+
+  function openNewProjectModal() {
+    openModal(`
+      <h3>🚀 新建项目文件夹</h3>
+      <div class="form-group">
+        <label>项目名称（将创建在 projects/&lt;name&gt;）</label>
+        <input id="mProj" placeholder="例如：my-awesome-app" />
+      </div>
+      <div class="modal-foot">
+        <button class="btn" id="mCancel">取消</button>
+        <button class="btn primary" id="mOk">创建</button>
+      </div>
+    `);
+    $('mCancel').onclick = closeModal;
+    $('mOk').onclick = async () => {
+      const name = ($('mProj').value || '').trim();
+      if (!name) return toast('请填写项目名称', true);
+      try {
+        await api('/api/mkdir', { method: 'POST', body: { path: 'projects/' + name } });
+        closeModal();
+        toast('已创建项目：' + name);
+        state.category = 'projects';
+        state.currentPath = 'projects/' + name;
+        await refreshAll();
+      } catch (err) { toast(err.message, true); }
+    };
+  }
+
+  function openNewFileModal() {
+    const base = state.currentPath || (state.category !== 'all' ? state.category : 'sessions');
+    openModal(`
+      <h3>📝 新建文件</h3>
+      <div class="form-group">
+        <label>保存路径（相对于根目录）</label>
+        <input id="mFilePath" value="${esc(base)}/untitled.md" />
+      </div>
+      <div class="modal-foot">
+        <button class="btn" id="mCancel">取消</button>
+        <button class="btn primary" id="mOk">创建并编辑</button>
+      </div>
+    `);
+    $('mCancel').onclick = closeModal;
+    $('mOk').onclick = async () => {
+      const p = ($('mFilePath').value || '').trim();
+      if (!p) return;
+      try {
+        const res = await api('/api/file', { method: 'POST', body: { path: p, content: '', createOnly: true } });
+        closeModal();
+        await refreshAll();
+        await selectItem(res.item.path, 'edit');
+        toast('已创建文件');
+      } catch (err) { toast(err.message, true); }
+    };
+  }
+
+  function openRenameModal(d) {
+    openModal(`
+      <h3>重命名</h3>
+      <div class="form-group">
+        <label>新名称</label>
+        <input id="mNewName" value="${esc(d.name)}" />
+      </div>
+      <div class="modal-foot">
+        <button class="btn" id="mCancel">取消</button>
+        <button class="btn primary" id="mOk">确定</button>
+      </div>
+    `);
+    $('mCancel').onclick = closeModal;
+    $('mOk').onclick = async () => {
+      try {
+        const res = await api('/api/rename', { method: 'POST', body: { path: d.path, newName: $('mNewName').value.trim() } });
+        closeModal();
+        toast('重命名成功');
+        await refreshAll();
+        await selectItem(res.item.path);
+      } catch (err) { toast(err.message, true); }
+    };
+  }
+
+  function openMoveModal(d) {
+    openModal(`
+      <h3>移动到目标目录 / 分类</h3>
+      <div class="form-group">
+        <label>目标文件夹相对路径（例如：projects、sessions/2026-11-27_xxx、scratch）</label>
+        <input id="mDest" value="${d.category === 'projects' ? 'sessions' : 'projects'}" />
+      </div>
+      <div class="modal-foot">
+        <button class="btn" id="mCancel">取消</button>
+        <button class="btn primary" id="mOk">移动</button>
+      </div>
+    `);
+    $('mCancel').onclick = closeModal;
+    $('mOk').onclick = async () => {
+      try {
+        const res = await api('/api/move', { method: 'POST', body: { path: d.path, destDir: $('mDest').value.trim() } });
+        closeModal();
+        toast('已移动至 ' + res.item.path);
+        await refreshAll();
+        await selectItem(res.item.path);
+      } catch (err) { toast(err.message, true); }
+    };
+  }
+
+  function openSettingsModal() {
+    openModal(`
+      <h3>⚙ Antigravity File Hub 设置</h3>
+      <div class="form-group">
+        <label>Antigravity 统一根目录路径</label>
+        <input id="mRootDir" value="${esc(state.overview?.rootDir || '')}" />
+      </div>
+      <div style="font-size:11px;color:var(--muted);line-height:1.5;">
+        默认自动使用 <code>D:\\Antigravity</code>（或系统主目录 <code>~/Antigravity</code>），并在其下自动维护 <code>projects/</code> 与 <code>sessions/</code> 分类目录。
+      </div>
+      <div class="modal-foot">
+        <button class="btn" id="mCancel">取消</button>
+        <button class="btn primary" id="mOk">保存</button>
+      </div>
+    `);
+    $('mCancel').onclick = closeModal;
+    $('mOk').onclick = async () => {
+      try {
+        await api('/api/settings', { method: 'POST', body: { rootDir: $('mRootDir').value.trim() } });
+        closeModal();
+        state.currentPath = '';
+        state.category = 'all';
+        await refreshAll();
+        toast('根目录已更新');
+      } catch (err) { toast(err.message, true); }
+    };
+  }
+
+  async function refreshAll() {
+    await loadOverview();
+    await loadList();
+  }
+
+  // Bind toolbar events
+  $('rootBadge').onclick = () => revealPath('', true);
+  $('btnOpenCur').onclick = () => revealPath(state.currentPath || (state.category !== 'all' ? state.category : ''), true);
+  $('btnRefresh').onclick = () => refreshAll().then(() => toast('已刷新'));
+  $('btnNewSession').onclick = openNewSessionModal;
+  $('btnNewProject').onclick = openNewProjectModal;
+  $('btnNewFile').onclick = openNewFileModal;
+  $('btnSettings').onclick = openSettingsModal;
+  $('btnTheme').onclick = async () => {
+    const next = document.body.classList.contains('light') ? 'dark' : 'light';
+    document.body.classList.toggle('light', next === 'light');
+    try { await api('/api/settings', { method: 'POST', body: { theme: next } }); } catch {}
+  };
+
+  let searchTimer;
+  $('searchInput').oninput = (e) => {
+    state.q = e.target.value;
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(loadList, 160);
+  };
+  for (const ch of $('typeChips').querySelectorAll('.chip')) {
+    ch.onclick = () => {
+      for (const c of $('typeChips').querySelectorAll('.chip')) c.classList.remove('active');
+      ch.classList.add('active');
+      state.fileType = ch.dataset.type;
+      loadList();
+    };
+  }
+  $('sortSelect').onchange = (e) => { state.sort = e.target.value; loadList(); };
+  $('btnOrder').onclick = () => {
+    state.order = state.order === 'desc' ? 'asc' : 'desc';
+    $('btnOrder').textContent = state.order === 'desc' ? '↓ 降序' : '↑ 升序';
+    loadList();
+  };
+  $('chkRecursive').onchange = (e) => { state.recursive = e.target.checked; loadList(); };
+
+  refreshAll().catch(err => toast('初始化失败: ' + err.message, true));
+})();
+</script>
+</body>
+</html>

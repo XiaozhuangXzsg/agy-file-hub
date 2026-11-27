@@ -1,0 +1,18 @@
+{
+  "name": "agy-file-hub",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Antigravity plugin for automatic project/session file organization and native side-pane file management (categorize, sort, preview, edit, inspect, reveal in Explorer).",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node sidecars/file-hub/main.mjs --port 18920",
+    "test": "node --test test/fs-service.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/XiaozhuangXzsg/agy-file-hub.git"
+  }
+}
